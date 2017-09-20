@@ -1,3 +1,4 @@
+setwd("~/GitHub/kaggle-Titanic/R/")
 # read data
 titanic = read.csv("~/GitHub/kaggle-Titanic/data/train.csv")
 titanic = read.csv("~/GitHub/kaggle-Titanic/data/train - processed.csv")
@@ -78,11 +79,18 @@ data = sparse.model.matrix(Survived ~ .*., titanic)
 lasso_cv = cv.glmnet(data, titanic$Survived, alpha=1, nfolds=10, family='binomial')
 lasso = glmnet(data, titanic$Survived, alpha=1, family='binomial')
 
+# knn
+data = titanic
+data$Sex = as.numeric(data$Sex)
+data$Embarked = as.numeric(data$Embarked)
+nn = knn.cv(data[,-1], data$Survived, k=1)
+
 # predict and create submission
 test = read.csv('~/GitHub/kaggle-Titanic/data/test - processed.csv')
 yhat = round(predict(logis, newdata=test, type='response'))
 yhat = predict(rf, newdata=test, type='response')
 test = cbind(Survived=0,test)
 yhat = round(predict(lasso, s=lasso_cv$lambda.min, newx=sparse.model.matrix(Survived ~ .*., test), type="response"))
+yhat = predict(nn, newdata=test, type='response')
 sub = data.frame(PassengerId=892:1309, Survived=yhat)
 write.csv(sub,'~/GitHub/kaggle-Titanic/submission/submission_rf_tf.csv',row.names = F)
