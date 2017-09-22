@@ -32,22 +32,23 @@ titanic$familysize = SibSp + Parch + 1
 detach(titanic)
 titanic = titanic[,c(-6,-7)]
 
-# create new variable 'title' using name, then remove name
-sub('.*?, (.*?) .*', '\\1', titanic[0,]$Name)
-titanic$title = sub('.*?, (.*?) .*', '\\1', titanic$Name)
+# create new variable 'title' using name, put unusual title into 'other', then remove name
+name = sub('.*?, (.*?) .*', '\\1', titanic$Name)
+name[which(!name %in% c('Mr.','Miss.','Mrs.','Master.'))] = 'other'
+titanic$title = factor(name)
 titanic$Name = NULL
   
 # correlation analysis
-# Pclass:Fare: -0.55, SibSp:Parch: 0.41
+# Pclass:Fare: -0.55
 # Sex? Embarked? <- interaction plot: nearly parallel
-cor(titanic[,c(-3,-8)])
-interaction.plot(titanic$Sex, titanic$Embarked, titanic$Survived)
+cor(titanic[,c(4,5,7)])
+interaction.plot(titanic[train,]$Sex, titanic[train,]$Embarked, titanic[train,]$Survived)
 
 # transformation
 #   for numeric: Age, Fare, familysize
 corrs = c(rep(0,6))
 best = c(rep(0,3))
-for(n in c(5,6,8)){
+for(n in c(4,5,7)){
   corrs[1] = glm(Survived ~ titanic[,n], family=binomial, data=titanic)$aic # not change
   corrs[2] = glm(Survived ~ titanic[,n]^2, family=binomial, data=titanic)$aic # square
   corrs[3] = glm(Survived ~ titanic[,n]^3, family=binomial, data=titanic)$aic# cube
@@ -88,7 +89,7 @@ drop1(logis, test='F')
 # random forest with importance plot
 # importance: Sex >> Age = Fare >> others
 library(randomForest)
-rf = randomForest(factor(Survived) ~ ., data=titanic[train,], ntree=500)
+rf = randomForest(factor(Survived) ~ ., data=titanic[train,], cutoff=c(0.47,0.53))
 rf = randomForest(factor(Survived) ~ .+Pclass:Sex+Sex:Age+Age:Parch+Age:Fare+Parch:Embarked,
                   data=titanic[train,], ntree=1000, mtry=3)
 varImpPlot(rf)
@@ -111,4 +112,4 @@ yhat = predict(rf, newdata=titanic[test,-1], type='response')
 yhat = round(predict(lasso, s=lasso_cv$lambda.min, newx=sparse.model.matrix(Survived ~ .*., titanic[test,]), type="response"))
 yhat = predict(nn, newdata=titanic[test,-1], type='response')
 sub = data.frame(PassengerId=892:1309, Survived=yhat)
-write.csv(sub, '~/GitHub/kaggle-Titanic/submission/submission_rf_tf.csv', row.names = F)
+write.csv(sub, '~/GitHub/kaggle-Titanic/submission/submission_rf_new_tf_biased.csv', row.names = F)
