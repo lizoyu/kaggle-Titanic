@@ -2,14 +2,14 @@ import csv
 import numpy as np
 from random import shuffle
 
-def load_Titanic(filename='../data/train - processed.csv', test=False):
+def load_Titanic(filename='../data/all.csv'):
     """
     load all the data from Titanic dataset
 
     Input:
         - filename: path to the csv file
     Output:
-        - data: list of data
+        - x_train, y_train, x_test
     """
     with open(filename, 'rt') as csvfile:
         fileToRead = csv.reader(csvfile)
@@ -17,18 +17,17 @@ def load_Titanic(filename='../data/train - processed.csv', test=False):
         # skip the header
         headers = next(fileToRead)
 
-        # split labels and data and save in dictionary
-        data = []
-        labels = []
+        x_train = []; x_test = []
+        y_train = []
         for row in fileToRead:
-            if not test:
-                labels.append(row.pop(0))
-            data.append(row)
+            label = row.pop(0)
+            if label == 'NA':
+                x_test.append(row)
+            else:
+                y_train.append(label)
+                x_train.append(row)
 
-    if not test:
-        return np.array(data), np.array(labels)
-    else:
-        return np.array(data)
+    return np.array(x_train), np.array(y_train), np.array(x_test)
 
 def create_submission(model, X_test, save_path):
     """
@@ -53,5 +52,5 @@ def create_submission(model, X_test, save_path):
             fileToWrite.writerow([i+892, predictions[i]])
 
 def tester():
-	x, y = load_Titanic()
-	print(x.shape,y.shape)
+	x_train, y_train, x_test = load_Titanic('../../data/all.csv')
+	print(x_train.shape,y_train.shape,x_test.shape)
