@@ -82,9 +82,14 @@ logis = glm(Survived ~ ., data=titanic[train,], family=binomial)
 summary(logis)
 
 # logistic with stepwise selection (full interactions)
-logis = glm(Survived ~ .*., data=titanic[train,], family=binomial)
+logis = glm(Survived ~ .+Pclass:familysize+Age:title+Fare:familysize+Fare:title+familysize:title, data=titanic[train,], family=binomial)
 logis = step(logis)
 drop1(logis, test='F')
+
+# gam
+library(gam)
+GAM = gam(Survived ~ .+Pclass:familysize+Age:title+Fare:familysize+Fare:title+familysize:title, data=titanic[train,], family=binomial)
+plot.gam(GAM, se=T, ask=T)
 
 # random forest with importance plot
 # importance: Sex >> Age = Fare >> others
